@@ -77,7 +77,7 @@ def download_version(version):
         available_sub_versions.append(int(sub_version[7:]))
         version_dict[sub_version]=link
     if len(version_links)==0:
-        ctypes.windll.user32.MessageBoxW(0, f"This version is not supported by Tableau, please find a compatible version manually.", "Version too old", 1)
+        ctypes.windll.user32.MessageBoxA(0, f"This version is not supported by Tableau, please find a compatible version manually.", "Version too old", 1)
     webbrowser.open(version_dict[version+"."+str(max(available_sub_versions))])
     
 def get_installed_versions():
@@ -100,7 +100,7 @@ def get_nearest_version(version, versions):
 def prompt_user(version, nearest_version):
     """Prompt the user to choose between opening the file with the nearest version or downloading the appropriate version"""
     messageBox = ctypes.windll.user32.MessageBoxW
-    result = messageBox(0, f"Tableau version {version} not found, the earliest version found is {nearest_version}. Do you want to open the file with this version? Pressing 'No' will open the download page for the appropriate version. ", "Version not found", 3)
+    result = messageBox(0, f"Tableau version {version} not found, the earliest version found is {nearest_version}. Do you want to open the file with this version? Pressing 'No' will open the download page for the appropriate version. Press 'Cancel' to abort.", "Version not found", 3)
     if result == 6:
         return 'open'
     elif result == 7:
