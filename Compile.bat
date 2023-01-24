@@ -1,0 +1,1 @@
+pyinstaller --onefile --icon=IWblocks-black.png IW_Tableau_version_matching.pyw
