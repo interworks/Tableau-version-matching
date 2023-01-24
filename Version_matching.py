@@ -4,7 +4,7 @@ import linecache
 import re
 from zipfile import ZipFile
 import subprocess
-import ctypes  # An included library with Python install.   
+import ctypes
 
 
 def extract_version(versionline):
@@ -18,10 +18,19 @@ def extract_version(versionline):
 def extract_twbx(file_path):
     """Extract the twbx file and return the third line"""
     os.mkdir("tmp")
-    with ZipFile(file_path,"r") as twbx:
-        twbx.extract(file_path[:-1],".\\tmp")
-    versionline=linecache.getline(f"tmp\\{file_path[:-1]}",3)
-    os.remove(f"tmp\\{file_path[:-1]}")
+    try:
+        print(file_path)
+        m=re.match(r".*\\([^\\]+.twb)x$",file_path)
+        file_name=m.group(1)
+        with ZipFile(file_path,"r") as twbx:
+            twbx.extract(file_name,".\\tmp")
+        
+        versionline=linecache.getline(f"tmp\\{file_name}",3)
+        os.remove(f"tmp\\{file_name}")
+    except:
+        os.rmdir("tmp")
+        raise FileNotFoundError
+        
     os.rmdir("tmp")
     return versionline
 
@@ -32,27 +41,59 @@ def check_tableau_install():
         exit()
     return True
 
-def check_version_match(version):
+def check_version_match(version, file_path):
     """Check if the extracted version number is present in the Tableau folder"""
-    versions=list()
-    for file in os.listdir("C:\\Program Files\\Tableau"):
-        if "Tableau" in file and not "Prep" in file:
-            m=re.match("Tableau (\d+\.\d)",file)
-            versions.append(m.group(1))
+    versions = get_installed_versions()
     if version in versions:
         print("Version match found")
-        return True
+        open_file_with_tableau(version, file_path)
     else:
-        print("Version not found, please download appropriate version from tableau.com/esdalt")
-        ctypes.windll.user32.MessageBoxW(0, "Version not found", f"Tableau version not found: {version}. Download from tableau.com/esdalt", 1)
-        return False
+        print("Version not found")
+        nearest_version = get_nearest_version(version, versions)
+        if nearest_version:
+            choice = prompt_user(version, nearest_version)
+            if choice == 'open':
+                open_file_with_tableau(nearest_version, file_path)
+            elif choice == 'download':
+                #download_version()
+                pass
+        else:
+            #download_version()
+            pass
+
+
+def get_installed_versions():
+    """Get the list of installed versions of Tableau"""
+    versions = []
+    for file in os.listdir("C:\\Program Files\\Tableau"):
+        if "Tableau" in file and not "Prep" in file:
+            m = re.match("Tableau (\d+\.\d)", file)
+            versions.append(m.group(1))
+    return versions
+
+def get_nearest_version(version, versions):
+    """Get the nearest version greater than the extracted version"""
+    versions.sort()
+    for ver in versions:
+        if version < ver:
+            return ver
+    return None
+
+def prompt_user(version, nearest_version):
+    """Prompt the user to choose between opening the file with the nearest version or downloading the appropriate version"""
+    messageBox = ctypes.windll.user32.MessageBoxW
+    result = messageBox(0, f"Tableau version {version} not found, the earliest version found is {nearest_version}. Do you want to open the file with this version?", "Version not found", 3)
+    if result == 6:
+        return 'open'
+    else:
+        messageBox(0, "Please download the appropriate version from tableau.com/esdalt", "Download the appropriate version", 1)
+        return 'download'
 
 def open_file_with_tableau(version, file_path):
     """Open the file with the matching version of Tableau"""
     DETACHED_PROCESS=0x00000008
-    cwd=os.getcwd()
     os.chdir(f"C:\\Program Files\\Tableau\\Tableau {version}\\bin")
-    pid=subprocess.Popen(f'tableau.exe "{cwd}\{file_path}"',creationflags=DETACHED_PROCESS)
+    pid=subprocess.Popen(f'tableau.exe "{file_path}"',creationflags=DETACHED_PROCESS)
 
 if __name__ == "__main__":
     file_path = sys.argv[1]
@@ -67,5 +108,4 @@ if __name__ == "__main__":
         raise NotImplementedError
 
     if check_tableau_install():
-        if check_version_match(version):
-            open_file_with_tableau(version, file_path)
+        check_version_match(version,file_path)
