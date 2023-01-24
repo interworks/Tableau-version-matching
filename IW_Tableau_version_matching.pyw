@@ -81,7 +81,10 @@ def get_installed_versions():
     for file in os.listdir("C:\\Program Files\\Tableau"):
         if "Tableau" in file and not "Prep" in file:
             m = re.match("Tableau (\d+\.\d)", file)
-            versions.append(m.group(1))
+            ver=m.group(1)
+            if os.path.exists(f"C:\\Program Files\\Tableau\\Tableau {ver}\\bin\\tableau.exe"):
+                versions.append(ver)
+            
     return versions
 
 def get_nearest_version(version, versions):
@@ -95,7 +98,7 @@ def get_nearest_version(version, versions):
 def prompt_user(version, nearest_version):
     """Prompt the user to choose between opening the file with the nearest version or downloading the appropriate version"""
     messageBox = ctypes.windll.user32.MessageBoxW
-    result = messageBox(0, f"Tableau version {version} not found, the earliest version found is {nearest_version}. Do you want to open the file with this version? Pressing 'No' will open the download page for the appropriate version. Press 'Cancel' to abort.", "Version not found", 3)
+    result = messageBox(0, f"Tableau version {version} not found, the earliest greater version found is {nearest_version}. Do you want to open the file with this version? Pressing 'No' will open the download page for the appropriate version. Press 'Cancel' to abort.", "Version not found", 3)
     if result == 6:
         return 'open'
     elif result == 7:
