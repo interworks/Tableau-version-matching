@@ -19,20 +19,16 @@ def extract_version(versionline):
 
 def extract_twbx(file_path):
     """Extract the twbx file and return the third line"""
-    os.mkdir("tmp")
-    try:
-        m=re.match(r".*\\([^\\]+.twb)x$",file_path)
-        file_name=m.group(1)
-        with ZipFile(file_path,"r") as twbx:
-            twbx.extract(file_name,".\\tmp")
-        
-        versionline=linecache.getline(f"tmp\\{file_name}",3)
-        os.remove(f"tmp\\{file_name}")
-    except:
-        os.rmdir("tmp")
-        raise FileNotFoundError
-        
-    os.rmdir("tmp")
+    
+    
+    m=re.match(r".*\\([^\\]+.twb)x$",file_path)
+    file_name=m.group(1)
+    
+    with ZipFile(file_path,"r") as twbx:
+        with twbx.open(file_name) as file:
+            file.__next__()
+            file.__next__()
+            versionline=file.__next__().decode("UTF-8")
     return versionline
 
 def check_tableau_install():
@@ -114,16 +110,19 @@ def open_file_with_tableau(version, file_path):
     pid=subprocess.Popen(f'tableau.exe "{file_path}"',creationflags=DETACHED_PROCESS)
 
 if __name__ == "__main__":
-    file_path = sys.argv[1]
-    if file_path.endswith("twb"):
-        versionline=linecache.getline(file_path,3)
-        version = extract_version(versionline)
+    if len(sys.argv)==2:
+        file_path = sys.argv[1]
+        if file_path.endswith("twb"):
+            versionline=linecache.getline(file_path,3)
+            version = extract_version(versionline)
 
-    elif file_path.endswith("twbx"):
-        versionline = extract_twbx(file_path)
-        version = extract_version(versionline)
+        elif file_path.endswith("twbx"):
+            versionline = extract_twbx(file_path)
+            version = extract_version(versionline)
+        else:
+            raise NotImplementedError
+
+        if check_tableau_install():
+            check_version_match(version,file_path)
     else:
-        raise NotImplementedError
-
-    if check_tableau_install():
-        check_version_match(version,file_path)
+        ctypes.windll.user32.MessageBoxW(0, f"Please follow the instructions on github/slack to associate this software with .twb and .twbx files.", "Please look at the instructions", 1)
