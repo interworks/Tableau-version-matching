@@ -20,11 +20,11 @@ def extract_version(versionline):
 def extract_twbx(file_path):
     """Extract the twbx file and return the third line"""
     
-    
-    m=re.match(r".*\\([^\\]+.twb)x$",file_path)
-    file_name=m.group(1)
-    
     with ZipFile(file_path,"r") as twbx:
+        namelist=twbx.namelist()
+        for name in namelist:
+            if name.endswith("twb"):
+                file_name=name
         with twbx.open(file_name) as file:
             file.__next__()
             file.__next__()
