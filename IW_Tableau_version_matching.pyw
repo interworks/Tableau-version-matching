@@ -79,11 +79,14 @@ def get_installed_versions():
     """Get the list of installed versions of Tableau"""
     versions = []
     for file in os.listdir("C:\\Program Files\\Tableau"):
-        if "Tableau" in file and not "Prep" in file:
+        if file.find("Tableau") != -1 and file.find("Prep") == -1 and file.find("Bridge") == -1:
             m = re.match("Tableau (\d+\.\d)", file)
-            ver=m.group(1)
-            if os.path.exists(f"C:\\Program Files\\Tableau\\Tableau {ver}\\bin\\tableau.exe"):
-                versions.append(ver)
+            try:
+                ver=m.group(1)
+                if os.path.exists(f"C:\\Program Files\\Tableau\\Tableau {ver}\\bin\\tableau.exe"):
+                    versions.append(ver)
+            except:
+                continue
             
     return versions
 
